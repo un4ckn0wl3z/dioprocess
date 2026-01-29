@@ -1,0 +1,130 @@
+# 🖥️ DioProcess - Windows Process Monitor
+
+A modern, lightweight Windows process monitor built with **Rust**, **Dioxus**, and **Windows API**.
+
+![Rust](https://img.shields.io/badge/Rust-2021-orange?logo=rust)
+![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)
+![Dioxus](https://img.shields.io/badge/UI-Dioxus%200.6-purple)
+
+## ✨ Features
+
+### Process Management
+- 📋 **Process List** - View all running processes with PID, name, CPU, threads, memory, and path
+- 🔍 **Search & Filter** - Quick search by process name, PID, or executable path
+- ⚡ **Real-time Updates** - Auto-refresh every 3 seconds (toggleable)
+- ☠️ **Kill Process** - Terminate processes with a click or keyboard shortcut
+- 📊 **Sortable Columns** - Sort by PID, Name, CPU, Threads, or Memory (ascending/descending)
+
+### System Monitoring
+- 🖥️ **CPU Usage** - Global CPU usage with visual progress bar
+- 💾 **RAM Usage** - Memory consumption (used/total GB) with progress bar
+- ⏱️ **System Uptime** - Time since last boot
+- 📈 **Process Count** - Total number of running processes
+
+### User Interface
+- 🎨 **Modern Dark Theme** - Sleek gradient design with Tailwind CSS
+- 🪟 **Borderless Window** - Custom title bar with drag, minimize, maximize, close
+- 📱 **Responsive Layout** - Adapts to window resizing
+
+### Context Menu (Right-Click)
+- ☠️ Kill Process
+- 📂 Open File Location
+- 📋 Copy PID
+- 📝 Copy Path
+- 🔄 Refresh List
+
+### Keyboard Shortcuts
+| Key | Action |
+|-----|--------|
+| `F5` | Refresh process list |
+| `Delete` | Kill selected process |
+| `Escape` | Close context menu |
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Rust](https://rustup.rs/) (2021 edition)
+- Windows 10/11
+
+### Build & Run
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/dioprocess.git
+cd dioprocess
+
+# Build release version
+cargo build --release
+
+# Run the application
+.\target\release\dioprocess.exe
+```
+
+### Development
+
+```bash
+# Run in development mode
+cargo run
+
+# Build with optimizations
+cargo build --release
+```
+
+## 📦 Dependencies
+
+| Crate | Version | Purpose |
+|-------|---------|---------|
+| `dioxus` | 0.6 | Desktop UI framework |
+| `tokio` | 1.x | Async runtime for auto-refresh |
+| `sysinfo` | 0.31 | CPU/Memory system statistics |
+| `windows` | 0.58 | Windows API bindings |
+
+### Windows API Features Used
+- `Win32_System_Diagnostics_ToolHelp` - Process enumeration
+- `Win32_System_Threading` - Process management
+- `Win32_System_ProcessStatus` - Memory information
+- `Win32_Foundation` - Core Windows types
+- `Win32_Security` - Process access rights
+
+## 📁 Project Structure
+
+```
+dioprocess/
+├── Cargo.toml          # Dependencies and project config
+├── README.md           # This file
+└── src/
+    ├── main.rs         # Entry point, window configuration
+    ├── process.rs      # Windows API process management
+    └── ui.rs           # Dioxus UI components
+```
+
+## 🖼️ Screenshots
+
+*Application running on Windows 11*
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs
+- Suggest features
+- Submit pull requests
+
+## 🔮 Roadmap
+
+- [ ] Process tree view (parent/child hierarchy)
+- [ ] Resource usage graphs over time
+- [ ] System tray support
+- [ ] Export process list to CSV
+- [ ] Dark/Light theme toggle
+- [ ] Process priority adjustment
+- [ ] Suspend/Resume processes
+- [ ] Network I/O per process
+- [ ] Services management tab
+
+---
+
+Built with ❤️ using Rust and Dioxus

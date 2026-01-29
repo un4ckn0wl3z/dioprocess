@@ -2,6 +2,10 @@
 //! Contains Windows API calls for process enumeration and management
 
 use std::mem::zeroed;
+use std::process::Command;
+use std::sync::Mutex;
+use std::collections::HashMap;
+use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind, RefreshKind};
 use windows::Win32::Foundation::{CloseHandle, HANDLE, MAX_PATH};
 use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
@@ -13,6 +17,9 @@ use windows::Win32::System::Threading::{
 };
 use windows::core::PWSTR;
 
+/// Global system info for CPU tracking (needs to persist between calls)
+static SYSTEM_INFO: Mutex<Option<System>> = Mutex::new(None);
+
 /// Process information structure
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProcessInfo {
@@ -21,11 +28,26 @@ pub struct ProcessInfo {
     pub memory_mb: f64,
     pub thread_count: u32,
     pub exe_path: String,
+    pub cpu_usage: f32,
 }
 
-/// Get list of running processes using Windows API
+/// System statistics
+#[derive(Clone, Debug, Default)]
+pub struct SystemStats {
+    pub total_memory_gb: f64,
+    pub used_memory_gb: f64,
+    pub memory_percent: f64,
+    pub cpu_usage: f32,
+    pub process_count: usize,
+    pub uptime_seconds: u64,
+}
+
+/// Get list of running processes using Windows API with CPU usage from sysinfo
 pub fn get_processes() -> Vec<ProcessInfo> {
     let mut processes = Vec::new();
+    
+    // Get CPU usage from sysinfo
+    let cpu_map = get_cpu_usage_map();
 
     unsafe {
         // Create a snapshot of all processes
@@ -45,6 +67,7 @@ pub fn get_processes() -> Vec<ProcessInfo> {
                 );
 
                 let (memory_mb, exe_path) = get_process_details(entry.th32ProcessID);
+                let cpu_usage = cpu_map.get(&entry.th32ProcessID).copied().unwrap_or(0.0);
 
                 processes.push(ProcessInfo {
                     pid: entry.th32ProcessID,
@@ -52,6 +75,7 @@ pub fn get_processes() -> Vec<ProcessInfo> {
                     memory_mb,
                     thread_count: entry.cntThreads,
                     exe_path,
+                    cpu_usage,
                 });
 
                 // Get the next process
@@ -65,6 +89,54 @@ pub fn get_processes() -> Vec<ProcessInfo> {
     }
 
     processes
+}
+
+/// Get CPU usage map using sysinfo
+fn get_cpu_usage_map() -> HashMap<u32, f32> {
+    let mut map = HashMap::new();
+    
+    let mut sys_guard = SYSTEM_INFO.lock().unwrap();
+    let sys = sys_guard.get_or_insert_with(|| {
+        System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new().with_cpu()))
+    });
+    
+    // Refresh processes to get CPU usage
+    sys.refresh_processes_specifics(ProcessesToUpdate::All, ProcessRefreshKind::new().with_cpu());
+    
+    for (pid, process) in sys.processes() {
+        map.insert(pid.as_u32(), process.cpu_usage());
+    }
+    
+    map
+}
+
+/// Get system statistics
+pub fn get_system_stats() -> SystemStats {
+    let mut sys_guard = SYSTEM_INFO.lock().unwrap();
+    let sys = sys_guard.get_or_insert_with(|| {
+        System::new_with_specifics(
+            RefreshKind::new()
+                .with_memory(sysinfo::MemoryRefreshKind::new().with_ram())
+                .with_cpu(sysinfo::CpuRefreshKind::new().with_cpu_usage())
+                .with_processes(ProcessRefreshKind::new().with_cpu())
+        )
+    });
+    
+    // Refresh all relevant info
+    sys.refresh_memory();
+    sys.refresh_cpu_all();
+    
+    let total_memory = sys.total_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
+    let used_memory = sys.used_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
+    
+    SystemStats {
+        total_memory_gb: total_memory,
+        used_memory_gb: used_memory,
+        memory_percent: if total_memory > 0.0 { (used_memory / total_memory) * 100.0 } else { 0.0 },
+        cpu_usage: sys.global_cpu_usage(),
+        process_count: sys.processes().len(),
+        uptime_seconds: System::uptime(),
+    }
 }
 
 /// Get memory usage and executable path for a specific process
@@ -124,5 +196,31 @@ pub fn kill_process(pid: u32) -> bool {
         let result = TerminateProcess(handle, 1).is_ok();
         let _ = CloseHandle(handle);
         result
+    }
+}
+
+/// Open file location in Windows Explorer
+pub fn open_file_location(path: &str) {
+    if path.is_empty() {
+        return;
+    }
+    // Use explorer.exe with /select to highlight the file
+    let _ = Command::new("explorer.exe")
+        .args(["/select,", path])
+        .spawn();
+}
+
+/// Format uptime in human readable format
+pub fn format_uptime(seconds: u64) -> String {
+    let days = seconds / 86400;
+    let hours = (seconds % 86400) / 3600;
+    let minutes = (seconds % 3600) / 60;
+    
+    if days > 0 {
+        format!("{}d {}h {}m", days, hours, minutes)
+    } else if hours > 0 {
+        format!("{}h {}m", hours, minutes)
+    } else {
+        format!("{}m", minutes)
     }
 }
