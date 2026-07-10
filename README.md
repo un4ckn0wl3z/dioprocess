@@ -1,8 +1,10 @@
 # DioProcess — Advanced Windows Process & System Monitor
 
-> **Notice: This is the final public release.**
+> **⚠️ This public repository is archived and no longer maintained.**
 >
-> Development will continue only in private builds. No further updates, features, or bug fixes will be published to this public repository. Thank you for your interest in the project.
+> **→ For the full-featured version with ongoing development and rich features, see: [`dioprocess-private`](https://github.com/un4ckn0wl3z/dioprocess-private)**
+>
+> Development continues only in the private repository. This public version represents the final public release and will not receive further updates, features, or bug fixes.
 
 ---
 
@@ -78,8 +80,15 @@ cargo build --release
 | `Delete` | Kill process |
 | `Escape` | Close modal |
 
-## MIT licensed.
+## Development Status
 
-**Note:** This public repository is archived and no longer accepting contributions.
+This public repository is **archived**:
+- ✅ Fully functional for the features listed above
+- ❌ No further updates or bug fixes planned
+- ❌ Issues and pull requests not accepted
+
+For new features and ongoing development, refer to the private repository at [`dioprocess-private`](https://github.com/un4ckn0wl3z/dioprocess-private).
+
+## MIT licensed.
 
 Built with Rust & Dioxus — 2025
